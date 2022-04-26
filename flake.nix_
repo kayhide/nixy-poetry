@@ -1,0 +1,39 @@
+{
+  description = "A very basic flake";
+
+  outputs = { self, nixpkgs }:
+    let
+      pkgs = nixpkgs.legacyPackages.x86_64-linux;
+
+      lib-path = with pkgs; lib.makeLibraryPath [
+        glib
+        stdenv.cc.cc
+      ];
+
+      my-python = pkgs.python3.withPackages (p: with p; [
+        pip
+        setuptools
+        virtualenv
+        wheel
+      ]);
+
+    in
+    {
+
+      packages.x86_64-linux.hello = nixpkgs.legacyPackages.x86_64-linux.hello;
+
+      defaultPackage.x86_64-linux = self.packages.x86_64-linux.hello;
+
+      devShell.x86_64-linux = pkgs.mkShell {
+        buildInputs = with pkgs; [
+          my-python
+          poetry
+        ];
+
+        shellHook = ''
+          export "LD_LIBRARY_PATH=${lib-path}"
+        '';
+      };
+
+    };
+}
